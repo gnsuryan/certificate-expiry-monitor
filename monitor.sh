@@ -156,8 +156,8 @@ EOF
     fi
 }
 
+#main starts here
 
-#Change environment variables:
 __scriptPath=$(dirname $0)
 
 source $__scriptPath/monitor.properties
