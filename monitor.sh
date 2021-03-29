@@ -134,11 +134,10 @@ function sendAlerts()
     if [ $__lcCEW -gt 0 ]; then
         (echo_err "!!! [WARNING] Check expired certificates !!!")
         (echo_err "$(cat $__scriptPath/msgtemplates/certificateExpireWarning.txt)")
-        #Comment out if you want to send as WARNING email.
-        #cat $__scriptPath/msgtemplates/certificateExpireWarning.txt $__scriptPath/msgtemplates/certificateSummary.txt | /sbin/sendmail -s "!!! [WARNING] Check expired certificates !!!" $__mailTo
-
         emailBody=$(cat $__scriptPath/msgtemplates/certificateExpireWarning.txt)
 
+if [ "$__sendMail" == "Y" ];
+then
 /usr/sbin/sendmail -oi -t << EOF
 From:  
 To: $__mailTo 
@@ -146,14 +145,39 @@ Subject: Certificate Expiry Reminder
 
 $emailBody
 EOF
+else
+  echo "sendEmail flag is set to N. So not triggering email notifications."
+fi
 	    exit 1
     else
-        echo "Script executed successfully! Certificates are OK!"
-        echo " "
-        echo "##################################################"
-        cat $__scriptPath/msgtemplates/certificateSummary.txt
-	    exit 0
+        __lcCS=$(cat $__scriptPath/msgtemplates/certificateSummary.txt | grep '\[CRITICAL\]' | wc -l)
+        if [ $__lcCS -gt 0 ]; then
+            (echo_err "!!! [CRITICAL] One or more certificates have already expired !!!")
+            (echo_err "$(cat $__scriptPath/msgtemplates/certificateSummary.txt)")
+            emailBody=$(cat $__scriptPath/msgtemplates/certificateSummary.txt)
+
+if [ "$__sendMail" == "Y" ];
+then
+/usr/sbin/sendmail -oi -t << EOF
+From:
+To: $__mailTo
+Subject: [Critical] Certificate already Expired
+
+$emailBody
+EOF
+else
+  echo "sendEmail flag is set to N. So not triggering email notifications."
+fi
+            exit 1
+        else
+            echo "Script executed successfully! Certificates are OK!"
+            echo " "
+            echo "##################################################"
+            cat $__scriptPath/msgtemplates/certificateSummary.txt
+            exit 0
+        fi
     fi
+
 }
 
 
